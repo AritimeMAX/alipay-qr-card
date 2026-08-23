@@ -21,10 +21,13 @@ const els = {
   logoInput: $('logo-input'),
   clearLogo: $('clear-logo'),
   logoLabel: $('logo-label'),
+  removeWhite: $('remove-white'),
   navPrev: $('nav-prev'),
   navNext: $('nav-next'),
   dots: document.querySelectorAll('.dot'),
 };
+
+const REMOVE_WHITE_THRESHOLD = 240;
 
 const DEFAULT_LOGO_URL = null;  // no bundled default — users provide their own
 const TOTAL_SLIDES = 2;
@@ -54,6 +57,37 @@ function showError(msg) {
 
 function activeLogo() {
   return customLogo;  // only custom uploads; no bundled default
+}
+
+// Pre-process an uploaded image: turn near-white pixels transparent so the
+// logo's own white background doesn't stack with our 1.5% white frame.
+// Returns a Promise<HTMLImageElement>.
+function processImage(img, removeWhite) {
+  if (!removeWhite) return Promise.resolve(img);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const px = data.data;
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i] >= REMOVE_WHITE_THRESHOLD &&
+        px[i + 1] >= REMOVE_WHITE_THRESHOLD &&
+        px[i + 2] >= REMOVE_WHITE_THRESHOLD) {
+      px[i + 3] = 0;
+    }
+  }
+  ctx.putImageData(data, 0, 0);
+
+  return new Promise((resolve, reject) => {
+    const out = new Image();
+    out.onload = () => resolve(out);
+    out.onerror = reject;
+    out.src = canvas.toDataURL('image/png');
+  });
 }
 
 function activeCanvas() {
@@ -138,21 +172,28 @@ els.download.addEventListener('click', () => {
 });
 
 // Logo file input
-els.logoInput.addEventListener('change', e => {
+els.logoInput.addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => {
-    const img = new Image();
-    img.onload = () => {
-      customLogo = img;
-      customLogoName = file.name;
-      els.logoLabel.textContent = file.name;
-      els.clearLogo.hidden = false;
-      if (currentMatrix) render();
+  reader.onload = async ev => {
+    const raw = new Image();
+    raw.onload = async () => {
+      try {
+        const removeWhite = els.removeWhite.checked;
+        const final = await processImage(raw, removeWhite);
+        customLogo = final;
+        customLogoName = file.name + (removeWhite ? ' · 白底已去' : '');
+        els.logoLabel.textContent = customLogoName;
+        els.clearLogo.hidden = false;
+        if (currentMatrix) render();
+      } catch (err) {
+        console.error(err);
+        showError('Logo 处理失败');
+      }
     };
-    img.onerror = () => showError('Logo 图片加载失败');
-    img.src = ev.target.result;
+    raw.onerror = () => showError('Logo 图片加载失败');
+    raw.src = ev.target.result;
   };
   reader.readAsDataURL(file);
 });

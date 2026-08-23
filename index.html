@@ -54,14 +54,18 @@
         <span id="logo-label">自定义 Logo</span>
         <input id="logo-input" type="file" accept="image/*" hidden>
       </label>
-      <button id="clear-logo" type="button" class="logo-clear">还原默认</button>
+      <button id="clear-logo" type="button" class="logo-clear">移除</button>
     </div>
+    <label class="logo-option">
+      <input type="checkbox" id="remove-white" checked>
+      <span>上传时自动去除白色背景</span>
+    </label>
 
     <button id="download-btn" type="button">下载 PNG</button>
   </main>
 
-  <!-- QR library: vendored locally, no CDN dependency. ?v=14 busts browser cache. -->
-  <script src="vendor/qrcode.js?v=14"></script>
-  <script type="module" src="js/app.js?v=14"></script>
+  <!-- QR library: vendored locally, no CDN dependency. ?v=15 busts browser cache. -->
+  <script src="vendor/qrcode.js?v=15"></script>
+  <script type="module" src="js/app.js?v=15"></script>
 </body>
 </html>
