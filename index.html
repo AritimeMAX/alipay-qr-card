@@ -11,8 +11,12 @@
     <p class="hint">输入 URL，实时生成带文字的二维码卡片。点「下载」保存 PNG。</p>
 
     <label for="url-input">URL</label>
-    <input id="url-input" type="text" autocomplete="off" spellcheck="false"
-           placeholder="https://example.com">
+    <div class="url-row">
+      <input id="url-input" type="text" autocomplete="off" spellcheck="false"
+             placeholder="https://example.com">
+      <label for="qr-scan-input" class="scan-button" title="上传二维码图片，自动识别 URL">扫二维码</label>
+      <input id="qr-scan-input" type="file" accept="image/*" hidden>
+    </div>
 
     <div class="row" id="text-row">
       <div class="col">
@@ -64,8 +68,9 @@
     <button id="download-btn" type="button">下载 PNG</button>
   </main>
 
-  <!-- QR library: vendored locally, no CDN dependency. ?v=16 busts browser cache. -->
-  <script src="vendor/qrcode.js?v=16"></script>
-  <script type="module" src="js/app.js?v=16"></script>
+  <!-- QR libraries: vendored locally, no CDN dependency. ?v=17 busts browser cache. -->
+  <script src="vendor/qrcode.js?v=17"></script>
+  <script src="vendor/jsQR.js?v=17"></script>
+  <script type="module" src="js/app.js?v=17"></script>
 </body>
 </html>

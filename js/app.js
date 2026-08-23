@@ -9,6 +9,8 @@ const $ = (id) => document.getElementById(id);
 
 const els = {
   input: $('url-input'),
+  scanInput: $('qr-scan-input'),
+  scanButton: document.querySelector('label[for="qr-scan-input"]'),
   title: $('title-input'),
   subtitle: $('subtitle-input'),
   textRow: $('text-row'),
@@ -165,6 +167,64 @@ const debouncedRender = debounce(render, 100);
 els.input.addEventListener('input', debouncedUpdate);
 els.title.addEventListener('input', debouncedRender);
 els.subtitle.addEventListener('input', debouncedRender);
+
+// QR code scan: user uploads a QR image, we decode the URL and fill the input
+els.scanInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  els.scanButton.classList.add('scanning');
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const result = decodeQrFromImage(img);
+        if (result) {
+          els.input.value = result;
+          els.input.classList.add('just-scanned');
+          setTimeout(() => els.input.classList.remove('just-scanned'), 800);
+          update();  // immediate render (no debounce — we just decoded it)
+          console.log(`[qr-app] scanned QR: ${result}`);
+        } else {
+          showError('未识别到二维码');
+        }
+      } catch (err) {
+        console.error(err);
+        showError('二维码识别失败');
+      } finally {
+        els.scanButton.classList.remove('scanning');
+        els.scanInput.value = '';  // allow re-uploading the same file
+      }
+    };
+    img.onerror = () => {
+      showError('图片加载失败');
+      els.scanButton.classList.remove('scanning');
+      els.scanInput.value = '';
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function decodeQrFromImage(img) {
+  const canvas = document.createElement('canvas');
+  // jsQR works best on the natural size; we cap it at 1024 to save memory
+  const maxDim = 1024;
+  let w = img.naturalWidth || img.width;
+  let h = img.naturalHeight || img.height;
+  if (Math.max(w, h) > maxDim) {
+    const ratio = maxDim / Math.max(w, h);
+    w = Math.round(w * ratio);
+    h = Math.round(h * ratio);
+  }
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+  const data = ctx.getImageData(0, 0, w, h);
+  const result = jsQR(data.data, w, h);
+  return result ? result.data : null;
+}
 
 els.download.addEventListener('click', () => {
   if (currentMatrix) {
