@@ -22,18 +22,19 @@ export function drawToCanvas(matrix, size, canvas, scale = 8) {
   }
 }
 
-// Draw a logo image (HTMLImageElement, HTMLCanvasElement, or ImageBitmap) on
-// top of an already-drawn QR. The logo sits in the center with a white
-// background for contrast. `logoRatio` controls logo size as a fraction of
-// the QR side length; default 0.20 (20%) is safe with EC level H (~30%).
-export function drawLogo(canvas, logo, logoRatio = 0.20) {
+// Draw a logo image on top of an already-drawn QR. The image is centered,
+// aspect-ratio-preserved (so non-square images don't get distorted), and
+// surrounded by a white rounded background for contrast.
+// `logoRatio` controls the logo size as a fraction of the QR side length;
+// default 0.22 (22%) is safe with EC level H (~30% recovery).
+export function drawLogo(canvas, img, logoRatio = 0.22) {
   const ctx = canvas.getContext('2d');
-  const qrSide = canvas.width - 8 * 8;  // subtract quiet zone (4 modules * 2 sides * 8px scale)
+  const qrSide = canvas.width - 8 * 8;  // subtract 4-module quiet zone on each side
   const size = qrSide * logoRatio;
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
 
-  // White background with rounded corners
+  // White rounded background (slightly larger than the logo)
   const padding = size * 0.10;
   const bgSize = size + padding * 2;
   const radius = size * 0.15;
@@ -41,13 +42,19 @@ export function drawLogo(canvas, logo, logoRatio = 0.20) {
   roundRect(ctx, cx - bgSize / 2, cy - bgSize / 2, bgSize, bgSize, radius);
   ctx.fill();
 
-  // Logo
-  ctx.drawImage(logo, cx - size / 2, cy - size / 2, size, size);
+  // Logo: fit into a size×size box, preserve aspect ratio, center.
+  const iw = img.width || img.naturalWidth;
+  const ih = img.height || img.naturalHeight;
+  const scale = Math.min(size / iw, size / ih);
+  const drawW = iw * scale;
+  const drawH = ih * scale;
+  ctx.drawImage(img, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
 }
 
-// Draw the built-in Alipay-style default logo (blue rounded square + "支" character).
-// This is a generic placeholder; users can upload their own logo to replace it.
-export function drawDefaultAlipayLogo(canvas) {
+// Fallback: when no image is available, draw a generic Alipay-style placeholder
+// (blue rounded square + "支" character). This is not the real Alipay logo,
+// just a similar-looking generic version.
+export function drawFallbackLogo(canvas) {
   const ctx = canvas.getContext('2d');
   const qrSide = canvas.width - 8 * 8;
   const size = qrSide * 0.22;
@@ -55,12 +62,10 @@ export function drawDefaultAlipayLogo(canvas) {
   const cy = canvas.height / 2;
   const radius = size * 0.18;
 
-  // Blue rounded background (Alipay-style blue)
   ctx.fillStyle = '#1677ff';
   roundRect(ctx, cx - size / 2, cy - size / 2, size, size, radius);
   ctx.fill();
 
-  // White "支" character
   ctx.fillStyle = '#ffffff';
   ctx.font = `bold ${Math.round(size * 0.6)}px -apple-system, "PingFang SC", sans-serif`;
   ctx.textAlign = 'center';

@@ -2,7 +2,7 @@
 // UI wiring: input → debounced encode → canvas render; download button.
 
 import { encode } from './encoder.js';
-import { drawToCanvas, drawLogo, drawDefaultAlipayLogo, downloadPng } from './render.js';
+import { drawToCanvas, drawLogo, drawFallbackLogo, downloadPng } from './render.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -17,10 +17,13 @@ const els = {
   logoLabel: $('logo-label'),
 };
 
+const DEFAULT_LOGO_URL = 'assets/alipay-logo.png';
+
 let currentMatrix = null;
 let currentSize = 0;
-let customLogo = null;       // HTMLImageElement or null (= use default)
-let useDefaultLogo = true;   // when no custom logo, show the placeholder
+let defaultLogo = null;       // preloaded default Alipay image
+let customLogo = null;        // user-uploaded image, takes priority
+let customLogoName = null;    // filename of the custom logo (for UI label)
 
 function debounce(fn, ms) {
   let t = null;
@@ -37,14 +40,17 @@ function showError(msg) {
   else els.input.classList.remove('invalid');
 }
 
+// Pick the active logo image: custom upload first, else default, else none.
+function activeLogo() {
+  return customLogo || defaultLogo;
+}
+
 function renderLogo() {
-  // Re-overlay the logo on the current canvas. Called after drawing QR
-  // or after the user changes the logo.
-  if (customLogo) {
-    drawLogo(els.canvas, customLogo);
-  } else if (useDefaultLogo) {
-    drawDefaultAlipayLogo(els.canvas);
+  const img = activeLogo();
+  if (img) {
+    drawLogo(els.canvas, img);
   }
+  // No fallback drawing: if no logo at all, leave the QR clean.
 }
 
 function update() {
@@ -90,7 +96,7 @@ els.download.addEventListener('click', () => {
   }
 });
 
-// Logo file input
+// Logo file input — custom image takes priority over the default
 els.logoInput.addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -99,10 +105,10 @@ els.logoInput.addEventListener('change', e => {
     const img = new Image();
     img.onload = () => {
       customLogo = img;
-      useDefaultLogo = false;
+      customLogoName = file.name;
       els.logoLabel.textContent = file.name;
       els.clearLogo.hidden = false;
-      renderLogo();
+      if (currentMatrix) renderLogo();
     };
     img.onerror = () => showError('Logo 图片加载失败');
     img.src = ev.target.result;
@@ -110,16 +116,31 @@ els.logoInput.addEventListener('change', e => {
   reader.readAsDataURL(file);
 });
 
-// Clear custom logo → revert to default placeholder
+// Clear custom logo → revert to the default Alipay image
 els.clearLogo.addEventListener('click', () => {
   customLogo = null;
-  useDefaultLogo = true;
+  customLogoName = null;
   els.logoInput.value = '';
-  els.logoLabel.textContent = '选择 Logo';
+  els.logoLabel.textContent = '自定义 Logo';
   els.clearLogo.hidden = true;
   if (currentMatrix) renderLogo();
 });
 
+// Preload the default Alipay logo on startup
+function preloadDefaultLogo() {
+  const img = new Image();
+  img.onload = () => {
+    defaultLogo = img;
+    if (currentMatrix) renderLogo();
+  };
+  img.onerror = () => {
+    // Default failed to load — fall back to the drawn placeholder on first render
+    defaultLogo = null;
+  };
+  img.src = DEFAULT_LOGO_URL;
+}
+
 // Initial state
 els.download.disabled = true;
 els.clearLogo.hidden = true;
+preloadDefaultLogo();
