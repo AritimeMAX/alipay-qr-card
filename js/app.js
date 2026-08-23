@@ -61,33 +61,36 @@ function activeLogo() {
 
 // Pre-process an uploaded image: turn near-white pixels transparent so the
 // logo's own white background doesn't stack with our 1.5% white frame.
-// Returns a Promise<HTMLImageElement>.
+// Returns the processed image source (canvas or img) — no async, no hang.
 function processImage(img, removeWhite) {
-  if (!removeWhite) return Promise.resolve(img);
+  if (!removeWhite) {
+    console.log('[qr-app] white removal: skipped (checkbox off)');
+    return img;
+  }
 
+  const w = img.naturalWidth || img.width;
+  const h = img.naturalHeight || img.height;
   const canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth || img.width;
-  canvas.height = img.naturalHeight || img.height;
+  canvas.width = w;
+  canvas.height = h;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0);
 
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = ctx.getImageData(0, 0, w, h);
   const px = data.data;
+  let stripped = 0;
   for (let i = 0; i < px.length; i += 4) {
     if (px[i] >= REMOVE_WHITE_THRESHOLD &&
         px[i + 1] >= REMOVE_WHITE_THRESHOLD &&
         px[i + 2] >= REMOVE_WHITE_THRESHOLD) {
       px[i + 3] = 0;
+      stripped++;
     }
   }
   ctx.putImageData(data, 0, 0);
-
-  return new Promise((resolve, reject) => {
-    const out = new Image();
-    out.onload = () => resolve(out);
-    out.onerror = reject;
-    out.src = canvas.toDataURL('image/png');
-  });
+  const pct = (stripped / (w * h) * 100).toFixed(1);
+  console.log(`[qr-app] white removal: ${stripped} pixels stripped (${pct}%)`);
+  return canvas;  // canvas can be passed to drawImage directly
 }
 
 function activeCanvas() {
@@ -172,16 +175,16 @@ els.download.addEventListener('click', () => {
 });
 
 // Logo file input
-els.logoInput.addEventListener('change', async e => {
+els.logoInput.addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = async ev => {
+  reader.onload = ev => {
     const raw = new Image();
-    raw.onload = async () => {
+    raw.onload = () => {
       try {
         const removeWhite = els.removeWhite.checked;
-        const final = await processImage(raw, removeWhite);
+        const final = processImage(raw, removeWhite);
         customLogo = final;
         customLogoName = file.name + (removeWhite ? ' · 白底已去' : '');
         els.logoLabel.textContent = customLogoName;
