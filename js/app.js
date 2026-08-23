@@ -130,14 +130,16 @@ els.clearLogo.addEventListener('click', () => {
 function preloadDefaultLogo() {
   const img = new Image();
   img.onload = () => {
+    console.log(`[qr-app] default logo loaded: ${img.naturalWidth}×${img.naturalHeight}`);
     defaultLogo = img;
     if (currentMatrix) renderLogo();
   };
-  img.onerror = () => {
-    // Default failed to load — fall back to the drawn placeholder on first render
+  img.onerror = (e) => {
+    console.error('[qr-app] default logo FAILED to load:', DEFAULT_LOGO_URL, e);
     defaultLogo = null;
   };
   img.src = DEFAULT_LOGO_URL;
+  console.log('[qr-app] preloading default logo from', DEFAULT_LOGO_URL);
 }
 
 // Initial state
