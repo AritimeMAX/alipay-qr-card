@@ -88,8 +88,9 @@ function drawQrRegion(ctx, matrix, size, ox, oy, scale, logo) {
     const cx = ox + qrSidePx(size, scale) / 2;
     const cy = oy + qrSidePx(size, scale) / 2;
 
-    const padding = logoSize * 0.015;
-    const bgSize = logoSize + padding * 2;
+    // No white border — the logo's own opaque background provides separation.
+    // If the logo is transparent, the QR modules show through, which is fine.
+    const bgSize = logoSize;
     const radius = logoSize * 0.35;
     ctx.fillStyle = '#ffffff';
     roundRect(ctx, cx - bgSize / 2, cy - bgSize / 2, bgSize, bgSize, radius);
