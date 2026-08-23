@@ -26,7 +26,7 @@ const els = {
   dots: document.querySelectorAll('.dot'),
 };
 
-const DEFAULT_LOGO_URL = 'assets/alipay-logo.png';
+const DEFAULT_LOGO_URL = null;  // no bundled default — users provide their own
 const TOTAL_SLIDES = 2;
 const SCALE_QR = 8;     // big impact for the QR-only view
 const SCALE_CARD = 6;   // smaller so the card fits in 480-px main
@@ -34,7 +34,6 @@ const SCALE_CARD = 6;   // smaller so the card fits in 480-px main
 let currentMatrix = null;
 let currentSize = 0;
 let currentSlide = 1;
-let defaultLogo = null;
 let customLogo = null;
 let customLogoName = null;
 
@@ -54,7 +53,7 @@ function showError(msg) {
 }
 
 function activeLogo() {
-  return customLogo || defaultLogo;
+  return customLogo;  // only custom uploads; no bundled default
 }
 
 function activeCanvas() {
@@ -162,7 +161,7 @@ els.clearLogo.addEventListener('click', () => {
   customLogo = null;
   customLogoName = null;
   els.logoInput.value = '';
-  els.logoLabel.textContent = '自定义 Logo';
+  els.logoLabel.textContent = '选择 Logo';
   els.clearLogo.hidden = true;
   if (currentMatrix) render();
 });
@@ -182,17 +181,8 @@ els.dots.forEach(dot => {
 });
 
 function preloadDefaultLogo() {
-  const img = new Image();
-  img.onload = () => {
-    console.log(`[qr-app] default logo loaded: ${img.naturalWidth}×${img.naturalHeight}`);
-    defaultLogo = img;
-    if (currentMatrix) render();
-  };
-  img.onerror = (e) => {
-    console.error('[qr-app] default logo FAILED to load:', DEFAULT_LOGO_URL, e);
-    defaultLogo = null;
-  };
-  img.src = DEFAULT_LOGO_URL;
+  // No bundled default logo. Users upload their own via the file input.
+  // Kept as a no-op for future restoration if a generic placeholder is wanted.
 }
 
 // Initial state
