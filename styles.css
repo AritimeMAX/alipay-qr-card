@@ -103,6 +103,7 @@ input.just-scanned {
 .url-row input {
   flex: 1;
   min-width: 0;
+  width: auto;  /* override the default input { width: 100% } */
 }
 
 .scan-button {
