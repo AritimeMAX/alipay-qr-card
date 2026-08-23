@@ -14,8 +14,9 @@ export function encode(url) {
   }
 
   // typeNumber 0 = auto-detect smallest version that fits the data.
-  // EC level M (≈15% recovery) is the standard middle ground.
-  const qr = qrcode(0, 'M');
+  // EC level H (≈30% recovery) — chosen for logo tolerance. M (15%) is too tight
+  // once we overlay a centered logo in the middle of the QR.
+  const qr = qrcode(0, 'H');
   qr.addData(url);           // default mode 'Byte' (UTF-8) — works for ASCII URLs
   qr.make();
 

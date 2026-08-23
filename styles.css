@@ -97,6 +97,52 @@ canvas {
   text-align: center;
 }
 
+.logo-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.logo-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #fff;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+
+.logo-button:hover {
+  border-color: var(--accent);
+  background: #f5f5f5;
+}
+
+.logo-clear {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  background: #fff;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.logo-clear:hover {
+  color: var(--fg);
+  border-color: var(--accent);
+}
+
 button {
   width: 100%;
   padding: 10px 16px;
