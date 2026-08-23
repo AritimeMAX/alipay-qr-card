@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>URL → QR</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <h1>URL → QR</h1>
+    <p class="hint">输入 URL，实时生成二维码。点「下载」保存 PNG。</p>
+
+    <label for="url-input">URL</label>
+    <input id="url-input" type="text" autocomplete="off" spellcheck="false"
+           placeholder="https://example.com">
+
+    <div id="error-msg" class="error" hidden></div>
+
+    <div class="canvas-wrap">
+      <canvas id="qr-canvas"></canvas>
+    </div>
+
+    <p id="meta" class="meta"></p>
+
+    <button id="download-btn" type="button">下载 PNG</button>
+  </main>
+
+  <!-- QR library: vendored locally, no CDN dependency -->
+  <script src="vendor/qrcode.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
