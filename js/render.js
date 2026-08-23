@@ -23,15 +23,10 @@ const QR_PAD = 4;        // quiet-zone modules around the QR (ISO standard)
 
 /**
  * Compose the card image onto an existing canvas.
- * @param {boolean[][]} matrix   QR matrix (square)
- * @param {number}      size     matrix dimension
- * @param {HTMLCanvasElement} canvas
- * @param {string}      title    main text (large)
- * @param {string}      subtitle secondary text (small)
- * @param {HTMLImageElement|null} logo
- * @param {number}      scale    pixels per module (default 8)
+ * Default scale is 6 (smaller) so the card fits alongside other UI in a
+ * 480-px main column. The QR-only view uses a larger scale (8) for impact.
  */
-export function drawCard(matrix, size, canvas, title, subtitle, logo, scale = 8) {
+export function drawCard(matrix, size, canvas, title, subtitle, logo, scale = 6) {
   const qrSide = (size + QR_PAD * 2) * scale;
   const totalW = PAD + TEXT_W + GAP + qrSide + PAD;
   const totalH = Math.max(qrSide, 80) + PAD * 2;

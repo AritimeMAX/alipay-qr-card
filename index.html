@@ -14,7 +14,7 @@
     <input id="url-input" type="text" autocomplete="off" spellcheck="false"
            placeholder="https://example.com">
 
-    <div class="row">
+    <div class="row" id="text-row">
       <div class="col">
         <label for="title-input">标题</label>
         <input id="title-input" type="text" maxlength="20" value="支付宝扫码">
@@ -28,7 +28,14 @@
     <div id="error-msg" class="error" hidden></div>
 
     <div class="canvas-wrap">
-      <canvas id="qr-canvas"></canvas>
+      <div class="slider" id="slider">
+        <div class="slide">
+          <canvas id="canvas-qr"></canvas>
+        </div>
+        <div class="slide">
+          <canvas id="canvas-card"></canvas>
+        </div>
+      </div>
     </div>
 
     <div class="slider-nav" id="slider-nav">
@@ -53,8 +60,8 @@
     <button id="download-btn" type="button">下载 PNG</button>
   </main>
 
-  <!-- QR library: vendored locally, no CDN dependency. ?v=9 busts browser cache. -->
-  <script src="vendor/qrcode.js?v=9"></script>
-  <script type="module" src="js/app.js?v=9"></script>
+  <!-- QR library: vendored locally, no CDN dependency. ?v=10 busts browser cache. -->
+  <script src="vendor/qrcode.js?v=10"></script>
+  <script type="module" src="js/app.js?v=10"></script>
 </body>
 </html>
