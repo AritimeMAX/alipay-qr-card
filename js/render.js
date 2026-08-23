@@ -34,11 +34,11 @@ export function drawLogo(canvas, img, logoRatio = 0.22) {
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
 
-  // White rounded background (tight, just enough to keep the logo readable
-  // against the QR modules around it)
-  const padding = size * 0.04;
+  // White rounded background (very tight — just barely visible separation
+  // between the logo edge and the surrounding QR modules)
+  const padding = size * 0.015;
   const bgSize = size + padding * 2;
-  const radius = size * 0.10;
+  const radius = size * 0.04;
   ctx.fillStyle = '#ffffff';
   roundRect(ctx, cx - bgSize / 2, cy - bgSize / 2, bgSize, bgSize, radius);
   ctx.fill();
