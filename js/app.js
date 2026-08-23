@@ -22,6 +22,7 @@ const els = {
 const DEFAULT_LOGO_URL = 'assets/alipay-logo.png';
 
 let currentMatrix = null;
+let currentSize = 0;
 let defaultLogo = null;
 let customLogo = null;
 let customLogoName = null;
