@@ -34,10 +34,10 @@ export function drawLogo(canvas, img, logoRatio = 0.22) {
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
 
-  // White rounded background (tight border, clearly rounded corners)
-  const padding = size * 0.02;
+  // White rounded background (tight border, very rounded corners — iOS-icon style)
+  const padding = size * 0.025;
   const bgSize = size + padding * 2;
-  const radius = size * 0.20;
+  const radius = size * 0.35;
   ctx.fillStyle = '#ffffff';
   roundRect(ctx, cx - bgSize / 2, cy - bgSize / 2, bgSize, bgSize, radius);
   ctx.fill();
