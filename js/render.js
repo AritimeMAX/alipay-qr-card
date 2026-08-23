@@ -1,76 +1,103 @@
 // render.js
-// Draw a boolean[][] matrix to a canvas and provide a PNG-download helper.
-// Optionally overlay a logo image in the center of the QR.
+// Compose the final card image: text on the left, QR code (with optional
+// logo) on the right. Provides a PNG-download helper.
 
-// Draw the matrix onto an existing canvas. `scale` modules per pixel;
-// default 8 gives a 168-px QR for V1, 456-px for V10.
-export function drawToCanvas(matrix, size, canvas, scale = 8) {
-  const quiet = 4 * scale;  // 4-module quiet zone (standard)
-  const px = (size + 8) * scale;
-  canvas.width = px;
-  canvas.height = px;
+// Layout constants (in canvas pixels at 1× — caller scales by `scale`).
+const PAD = 20;          // outer padding around the whole card
+const GAP = 24;          // gap between text and QR
+const TEXT_W = 180;      // fixed text-area width
+const QR_PAD = 4;        // quiet-zone modules around the QR (ISO standard)
+
+/**
+ * Compose the card image onto an existing canvas.
+ * @param {boolean[][]} matrix   QR matrix (square)
+ * @param {number}      size     matrix dimension
+ * @param {HTMLCanvasElement} canvas
+ * @param {string}      title    main text (large)
+ * @param {string}      subtitle secondary text (small)
+ * @param {HTMLImageElement|null} logo
+ * @param {number}      scale    pixels per module (default 8)
+ */
+export function drawCard(matrix, size, canvas, title, subtitle, logo, scale = 8) {
+  const qrSide = (size + QR_PAD * 2) * scale;
+  const totalW = PAD + TEXT_W + GAP + qrSide + PAD;
+  const totalH = Math.max(qrSide, 80) + PAD * 2;
+
+  canvas.width = totalW;
+  canvas.height = totalH;
   const ctx = canvas.getContext('2d');
+
+  // White background
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, px, px);
+  ctx.fillRect(0, 0, totalW, totalH);
+
+  // Left: text block, right-aligned, vertically centered
+  const textX = PAD + TEXT_W;
+  const textCenterY = totalH / 2;
+  drawTextBlock(ctx, title, subtitle, textX, textCenterY);
+
+  // Right: QR code
+  const qrX = PAD + TEXT_W + GAP;
+  const qrY = (totalH - qrSide) / 2;
+  drawQrRegion(ctx, matrix, size, qrX, qrY, scale, logo);
+}
+
+function drawTextBlock(ctx, title, subtitle, rightX, centerY) {
+  const titleSize = 26;
+  const subtitleSize = 15;
+  const lineGap = 8;
+
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+
+  // Title
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = `600 ${titleSize}px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif`;
+  const titleY = centerY - (titleSize + lineGap) / 2;
+  ctx.fillText(title || '', rightX, titleY);
+
+  // Subtitle
+  ctx.fillStyle = '#6b6b6b';
+  ctx.font = `${subtitleSize}px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif`;
+  const subY = centerY + (subtitleSize + lineGap) / 2;
+  ctx.fillText(subtitle || '', rightX, subY);
+}
+
+function drawQrRegion(ctx, matrix, size, ox, oy, scale, logo) {
+  // Black QR modules
   ctx.fillStyle = '#000000';
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
       if (matrix[r][c]) {
-        ctx.fillRect((c + 4) * scale, (r + 4) * scale, scale, scale);
+        ctx.fillRect(ox + (c + QR_PAD) * scale, oy + (r + QR_PAD) * scale, scale, scale);
       }
     }
   }
+
+  // Optional centered logo
+  if (logo) {
+    const logoSize = (size * scale) * 0.22;
+    const cx = ox + qrSidePx(size, scale) / 2;
+    const cy = oy + qrSidePx(size, scale) / 2;
+
+    const padding = logoSize * 0.025;
+    const bgSize = logoSize + padding * 2;
+    const radius = logoSize * 0.35;
+    ctx.fillStyle = '#ffffff';
+    roundRect(ctx, cx - bgSize / 2, cy - bgSize / 2, bgSize, bgSize, radius);
+    ctx.fill();
+
+    const iw = logo.width || logo.naturalWidth;
+    const ih = logo.height || logo.naturalHeight;
+    const s = Math.min(logoSize / iw, logoSize / ih);
+    const dw = iw * s;
+    const dh = ih * s;
+    ctx.drawImage(logo, cx - dw / 2, cy - dh / 2, dw, dh);
+  }
 }
 
-// Draw a logo image on top of an already-drawn QR. The image is centered,
-// aspect-ratio-preserved (so non-square images don't get distorted), and
-// surrounded by a white rounded background for contrast.
-// `logoRatio` controls the logo size as a fraction of the QR side length;
-// default 0.22 (22%) is safe with EC level H (~30% recovery).
-export function drawLogo(canvas, img, logoRatio = 0.22) {
-  const ctx = canvas.getContext('2d');
-  const qrSide = canvas.width - 8 * 8;  // subtract 4-module quiet zone on each side
-  const size = qrSide * logoRatio;
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
-
-  // White rounded background (tight border, very rounded corners — iOS-icon style)
-  const padding = size * 0.025;
-  const bgSize = size + padding * 2;
-  const radius = size * 0.35;
-  ctx.fillStyle = '#ffffff';
-  roundRect(ctx, cx - bgSize / 2, cy - bgSize / 2, bgSize, bgSize, radius);
-  ctx.fill();
-
-  // Logo: fit into a size×size box, preserve aspect ratio, center.
-  const iw = img.width || img.naturalWidth;
-  const ih = img.height || img.naturalHeight;
-  const scale = Math.min(size / iw, size / ih);
-  const drawW = iw * scale;
-  const drawH = ih * scale;
-  ctx.drawImage(img, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
-}
-
-// Fallback: when no image is available, draw a generic Alipay-style placeholder
-// (blue rounded square + "支" character). This is not the real Alipay logo,
-// just a similar-looking generic version.
-export function drawFallbackLogo(canvas) {
-  const ctx = canvas.getContext('2d');
-  const qrSide = canvas.width - 8 * 8;
-  const size = qrSide * 0.22;
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
-  const radius = size * 0.18;
-
-  ctx.fillStyle = '#1677ff';
-  roundRect(ctx, cx - size / 2, cy - size / 2, size, size, radius);
-  ctx.fill();
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `bold ${Math.round(size * 0.6)}px -apple-system, "PingFang SC", sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('支', cx, cy);
+function qrSidePx(size, scale) {
+  return (size + QR_PAD * 2) * scale;
 }
 
 function roundRect(ctx, x, y, w, h, r) {

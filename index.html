@@ -8,11 +8,22 @@
 <body>
   <main>
     <h1>URL → QR</h1>
-    <p class="hint">输入 URL，实时生成二维码。点「下载」保存 PNG。</p>
+    <p class="hint">输入 URL，实时生成带文字的二维码卡片。点「下载」保存 PNG。</p>
 
     <label for="url-input">URL</label>
     <input id="url-input" type="text" autocomplete="off" spellcheck="false"
            placeholder="https://example.com">
+
+    <div class="row">
+      <div class="col">
+        <label for="title-input">标题</label>
+        <input id="title-input" type="text" maxlength="20" value="支付宝扫码">
+      </div>
+      <div class="col">
+        <label for="subtitle-input">副标题</label>
+        <input id="subtitle-input" type="text" maxlength="20" value="联系车主">
+      </div>
+    </div>
 
     <div id="error-msg" class="error" hidden></div>
 
@@ -24,7 +35,7 @@
 
     <div class="logo-row">
       <label for="logo-input" class="logo-button">
-        <span id="logo-label">选择 Logo</span>
+        <span id="logo-label">自定义 Logo</span>
         <input id="logo-input" type="file" accept="image/*" hidden>
       </label>
       <button id="clear-logo" type="button" class="logo-clear">还原默认</button>
@@ -33,8 +44,8 @@
     <button id="download-btn" type="button">下载 PNG</button>
   </main>
 
-  <!-- QR library: vendored locally, no CDN dependency. ?v=6 busts browser cache. -->
-  <script src="vendor/qrcode.js?v=6"></script>
-  <script type="module" src="js/app.js?v=6"></script>
+  <!-- QR library: vendored locally, no CDN dependency. ?v=7 busts browser cache. -->
+  <script src="vendor/qrcode.js?v=7"></script>
+  <script type="module" src="js/app.js?v=7"></script>
 </body>
 </html>

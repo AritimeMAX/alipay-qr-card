@@ -2,12 +2,14 @@
 // UI wiring: input → debounced encode → canvas render; download button.
 
 import { encode } from './encoder.js';
-import { drawToCanvas, drawLogo, drawFallbackLogo, downloadPng } from './render.js';
+import { drawCard, downloadPng } from './render.js';
 
 const $ = (id) => document.getElementById(id);
 
 const els = {
   input: $('url-input'),
+  title: $('title-input'),
+  subtitle: $('subtitle-input'),
   canvas: $('qr-canvas'),
   download: $('download-btn'),
   error: $('error-msg'),
@@ -20,10 +22,9 @@ const els = {
 const DEFAULT_LOGO_URL = 'assets/alipay-logo.png';
 
 let currentMatrix = null;
-let currentSize = 0;
-let defaultLogo = null;       // preloaded default Alipay image
-let customLogo = null;        // user-uploaded image, takes priority
-let customLogoName = null;    // filename of the custom logo (for UI label)
+let defaultLogo = null;
+let customLogo = null;
+let customLogoName = null;
 
 function debounce(fn, ms) {
   let t = null;
@@ -40,17 +41,21 @@ function showError(msg) {
   else els.input.classList.remove('invalid');
 }
 
-// Pick the active logo image: custom upload first, else default, else none.
 function activeLogo() {
   return customLogo || defaultLogo;
 }
 
-function renderLogo() {
-  const img = activeLogo();
-  if (img) {
-    drawLogo(els.canvas, img);
-  }
-  // No fallback drawing: if no logo at all, leave the QR clean.
+function render() {
+  if (!currentMatrix) return;
+  drawCard(
+    currentMatrix,
+    currentSize,
+    els.canvas,
+    els.title.value,
+    els.subtitle.value,
+    activeLogo(),
+    8,
+  );
 }
 
 function update() {
@@ -69,8 +74,7 @@ function update() {
     const { matrix, size, version } = encode(url);
     currentMatrix = matrix;
     currentSize = size;
-    drawToCanvas(matrix, size, els.canvas, 8);
-    renderLogo();
+    drawCard(matrix, size, els.canvas, els.title.value, els.subtitle.value, activeLogo(), 8);
     els.download.disabled = false;
     els.meta.textContent = `Version ${version} · ${size}×${size} · EC-H · ${url.length} 字符`;
     showError('');
@@ -88,15 +92,21 @@ function clearCanvas() {
   ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
 }
 
-els.input.addEventListener('input', debounce(update, 200));
+const debouncedUpdate = debounce(update, 200);
+const debouncedRender = debounce(render, 100);
+
+els.input.addEventListener('input', debouncedUpdate);
+els.title.addEventListener('input', debouncedRender);
+els.subtitle.addEventListener('input', debouncedRender);
+
 els.download.addEventListener('click', () => {
   if (currentMatrix) {
-    const filename = (els.input.value.trim() || 'qrcode').replace(/[^a-z0-9]/gi, '_') + '.png';
-    downloadPng(els.canvas, filename);
+    const safe = (els.input.value.trim() || 'qrcode').replace(/[^a-z0-9]/gi, '_');
+    downloadPng(els.canvas, safe + '.png');
   }
 });
 
-// Logo file input — custom image takes priority over the default
+// Logo file input
 els.logoInput.addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -108,7 +118,7 @@ els.logoInput.addEventListener('change', e => {
       customLogoName = file.name;
       els.logoLabel.textContent = file.name;
       els.clearLogo.hidden = false;
-      if (currentMatrix) renderLogo();
+      if (currentMatrix) render();
     };
     img.onerror = () => showError('Logo 图片加载失败');
     img.src = ev.target.result;
@@ -116,30 +126,27 @@ els.logoInput.addEventListener('change', e => {
   reader.readAsDataURL(file);
 });
 
-// Clear custom logo → revert to the default Alipay image
 els.clearLogo.addEventListener('click', () => {
   customLogo = null;
   customLogoName = null;
   els.logoInput.value = '';
   els.logoLabel.textContent = '自定义 Logo';
   els.clearLogo.hidden = true;
-  if (currentMatrix) renderLogo();
+  if (currentMatrix) render();
 });
 
-// Preload the default Alipay logo on startup
 function preloadDefaultLogo() {
   const img = new Image();
   img.onload = () => {
     console.log(`[qr-app] default logo loaded: ${img.naturalWidth}×${img.naturalHeight}`);
     defaultLogo = img;
-    if (currentMatrix) renderLogo();
+    if (currentMatrix) render();
   };
   img.onerror = (e) => {
     console.error('[qr-app] default logo FAILED to load:', DEFAULT_LOGO_URL, e);
     defaultLogo = null;
   };
   img.src = DEFAULT_LOGO_URL;
-  console.log('[qr-app] preloading default logo from', DEFAULT_LOGO_URL);
 }
 
 // Initial state
