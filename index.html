@@ -31,6 +31,15 @@
       <canvas id="qr-canvas"></canvas>
     </div>
 
+    <div class="slider-nav" id="slider-nav">
+      <button type="button" class="nav-arrow" id="nav-prev" aria-label="上一张">‹</button>
+      <div class="dots">
+        <span class="dot active" data-slide="1"></span>
+        <span class="dot" data-slide="2"></span>
+      </div>
+      <button type="button" class="nav-arrow" id="nav-next" aria-label="下一张">›</button>
+    </div>
+
     <p id="meta" class="meta"></p>
 
     <div class="logo-row">
@@ -44,8 +53,8 @@
     <button id="download-btn" type="button">下载 PNG</button>
   </main>
 
-  <!-- QR library: vendored locally, no CDN dependency. ?v=8 busts browser cache. -->
-  <script src="vendor/qrcode.js?v=8"></script>
-  <script type="module" src="js/app.js?v=8"></script>
+  <!-- QR library: vendored locally, no CDN dependency. ?v=9 busts browser cache. -->
+  <script src="vendor/qrcode.js?v=9"></script>
+  <script type="module" src="js/app.js?v=9"></script>
 </body>
 </html>

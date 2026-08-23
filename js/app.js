@@ -2,7 +2,7 @@
 // UI wiring: input → debounced encode → canvas render; download button.
 
 import { encode } from './encoder.js';
-import { drawCard, downloadPng } from './render.js';
+import { drawCard, drawQrOnly, downloadPng } from './render.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -17,12 +17,17 @@ const els = {
   logoInput: $('logo-input'),
   clearLogo: $('clear-logo'),
   logoLabel: $('logo-label'),
+  navPrev: $('nav-prev'),
+  navNext: $('nav-next'),
+  dots: document.querySelectorAll('.dot'),
 };
 
 const DEFAULT_LOGO_URL = 'assets/alipay-logo.png';
+const TOTAL_SLIDES = 2;
 
 let currentMatrix = null;
 let currentSize = 0;
+let currentSlide = 1;
 let defaultLogo = null;
 let customLogo = null;
 let customLogoName = null;
@@ -46,17 +51,30 @@ function activeLogo() {
   return customLogo || defaultLogo;
 }
 
+function updateDots() {
+  els.dots.forEach(d => {
+    d.classList.toggle('active', Number(d.dataset.slide) === currentSlide);
+  });
+  els.navPrev.disabled = currentSlide <= 1;
+  els.navNext.disabled = currentSlide >= TOTAL_SLIDES;
+}
+
 function render() {
   if (!currentMatrix) return;
-  drawCard(
-    currentMatrix,
-    currentSize,
-    els.canvas,
-    els.title.value,
-    els.subtitle.value,
-    activeLogo(),
-    8,
-  );
+  if (currentSlide === 1) {
+    drawQrOnly(currentMatrix, currentSize, els.canvas, activeLogo(), 8);
+  } else {
+    drawCard(
+      currentMatrix,
+      currentSize,
+      els.canvas,
+      els.title.value,
+      els.subtitle.value,
+      activeLogo(),
+      8,
+    );
+  }
+  updateDots();
 }
 
 function update() {
@@ -75,7 +93,7 @@ function update() {
     const { matrix, size, version } = encode(url);
     currentMatrix = matrix;
     currentSize = size;
-    drawCard(matrix, size, els.canvas, els.title.value, els.subtitle.value, activeLogo(), 8);
+    render();
     els.download.disabled = false;
     els.meta.textContent = `Version ${version} · ${size}×${size} · EC-H · ${url.length} 字符`;
     showError('');
@@ -136,6 +154,29 @@ els.clearLogo.addEventListener('click', () => {
   if (currentMatrix) render();
 });
 
+// Slider navigation
+els.navPrev.addEventListener('click', () => {
+  if (currentSlide > 1) {
+    currentSlide--;
+    render();
+  }
+});
+els.navNext.addEventListener('click', () => {
+  if (currentSlide < TOTAL_SLIDES) {
+    currentSlide++;
+    render();
+  }
+});
+els.dots.forEach(dot => {
+  dot.addEventListener('click', () => {
+    const target = Number(dot.dataset.slide);
+    if (target !== currentSlide) {
+      currentSlide = target;
+      render();
+    }
+  });
+});
+
 function preloadDefaultLogo() {
   const img = new Image();
   img.onload = () => {
@@ -153,4 +194,5 @@ function preloadDefaultLogo() {
 // Initial state
 els.download.disabled = true;
 els.clearLogo.hidden = true;
+updateDots();
 preloadDefaultLogo();

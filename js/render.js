@@ -2,6 +2,19 @@
 // Compose the final card image: text on the left, QR code (with optional
 // logo) on the right. Provides a PNG-download helper.
 
+/**
+ * Draw just the QR (with optional logo) — no side text. Square canvas.
+ */
+export function drawQrOnly(matrix, size, canvas, logo, scale = 8) {
+  const qrSide = (size + QR_PAD * 2) * scale;
+  canvas.width = qrSide;
+  canvas.height = qrSide;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, qrSide, qrSide);
+  drawQrRegion(ctx, matrix, size, 0, 0, scale, logo);
+}
+
 // Layout constants (in canvas pixels at 1× — caller scales by `scale`).
 const PAD = 20;          // outer padding around the whole card
 const GAP = 24;          // gap between text and QR
